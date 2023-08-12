@@ -24,7 +24,7 @@ int *linearSearch(int array[], size_t size, int target) {
             targetPositions[targetOccurrencesCount] = i;
             targetOccurrencesCount++;
 
-            targetPositions = realloc(targetPositions, targetOccurrencesCount);
+            targetPositions = realloc(targetPositions, sizeof(int) * (targetOccurrencesCount + 1));
         }
     }
 
@@ -83,7 +83,7 @@ int *binarySearch(int array[], size_t size, int target) { // fix case: start == 
 
     size_t targetOccurrencesCount = end - start + 1;
 
-    int *targetPositions = malloc((targetOccurrencesCount + 1) * sizeof(int));
+    int *targetPositions = malloc(sizeof(int) * (targetOccurrencesCount + 1));
     
     // add the target's positions to the target positions array
 
