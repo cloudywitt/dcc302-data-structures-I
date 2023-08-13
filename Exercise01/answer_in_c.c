@@ -7,7 +7,7 @@ um item qualquer que esteja se repetindo.
 
 Entrada (lista, item)                               Saída
 [2, 2, 5, 8, 23, 24, 32, 44, 56, 99], 2             [0,1]
-[1, 13, 21, 21, 21, 25, 36, 74], 21                  [2, 3, 4]
+[1, 13, 21, 21, 21, 25, 36, 74], 21                 [2, 3, 4]
 [4, 14, 15, 19, 21, 23, 45, 78, 81, 81, 90], 81     [8, 9]
 [2, 2, 5, 8, 23, 24, 32, 44, 56, 99], 7             [ ]
 */
@@ -75,22 +75,16 @@ int findLastOccurrence(int array[], size_t size, int target) {
     return result;
 }
 
-int *binarySearch(int array[], size_t size, int target) { // fix case: start == -1 && end == -1
+int *binarySearch(int array[], size_t size, int target) {
     int start = findFirstOccurrence(array, size, target);
     int end = findLastOccurrence(array, size, target);
 
-    // if start == -1... start = end = 0 (i can return from here)
-
-    size_t targetOccurrencesCount = end - start + 1;
+    size_t targetOccurrencesCount = (start != -1) ? (end - start + 1): 1;
 
     int *targetPositions = malloc(sizeof(int) * (targetOccurrencesCount + 1));
     
-    // add the target's positions to the target positions array
-
-    // int j = 0;
     for (int i = start, j = 0; i <= end; i++, j++) {
         targetPositions[j] = i;
-        // j++;
     }
 
     targetPositions[targetOccurrencesCount] = END_OF_ARRAY;
@@ -112,7 +106,7 @@ void printHeapArray(int array[]) {
 }
 
 int main() {
-    // Case 1: [2, 2, 5, 8, 23, 24, 32, 44, 56, 99], 2             // Output: [0,1]
+    // Case 1: [2, 2, 5, 8, 23, 24, 32, 44, 56, 99], 2             // Output: [0, 1]
     int numbers[] = {2, 2, 5, 8, 23, 24, 32, 44, 56, 99};
     const size_t numbersSize = sizeof(numbers) / sizeof(numbers[0]);
     int target = 2;
