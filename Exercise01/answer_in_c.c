@@ -79,7 +79,11 @@ int *binarySearch(int array[], size_t size, int target) {
     int start = findFirstOccurrence(array, size, target);
     int end = findLastOccurrence(array, size, target);
 
-    size_t targetOccurrencesCount = (start != -1) ? (end - start + 1): 1;
+    if (start == -1) {
+        start = 0;
+    }
+
+    size_t targetOccurrencesCount = end - start + 1;
 
     int *targetPositions = malloc(sizeof(int) * (targetOccurrencesCount + 1));
     
