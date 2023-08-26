@@ -1,0 +1,7 @@
+gcc
+compiler
+Dennis Ritchie
+Hello World
+pointers
+memory leak
+algorithm
