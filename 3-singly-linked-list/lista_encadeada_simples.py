@@ -1,3 +1,6 @@
+# cSpell: disable
+from random import randint
+
 class Node:
     def __init__(self, valor):
         self.valor = valor
@@ -51,38 +54,72 @@ class Lista_Encadeada:
 
 # --------------------------------------- Exercício 03 - Lista Encadeada Simples.pdf
     def busca_simples(self, valor):
-        # Implementar...
-        pass
+        no_atual = self.inicio
+ 
+        while no_atual != None:
+            if no_atual.valor == valor:
+                return no_atual
 
+            no_atual = no_atual.next
 
     def remover(self, valor):
-        # Implementar...
-        pass
+        no_atual = self.inicio
+        no_anterior = self.inicio
+        no_removido = None
+
+        # Tratar primeiro caso: os "ponteiros" apontam para o primero nó
+        if no_atual.valor == valor:
+            no_removido = no_atual
+            self.inicio = no_atual.next
+
+            return no_removido
+
+        # Resto
+        no_atual = no_atual.next
+
+        while no_atual != None:
+            if no_atual.valor == valor:
+                no_removido = no_atual
+                no_anterior.next = no_atual.next
+
+                return no_removido
+
+            no_atual = no_atual.next
+            no_anterior = no_anterior.next
+
+    def add_numeros_aleatorios(self, quantidade):
+        for i in range(10):
+            numero_aleatorio = randint(0, 100)
+
+            self.add_final_v2(numero_aleatorio)
 
 
 if __name__ == '__main__':
     # ------------------------------ INSERÇÃO Números aleatórios
-
     L = Lista_Encadeada()
-    print("Inserir 10 numeros aleatórios")
-        # Implementar...
 
+    print("Inserir 10 numeros aleatórios")
+    L.add_numeros_aleatorios(10)
 
     L.imprime_lista()
+    print()
 
-    
     # ---- Teste do Exercício
     # ------------------------------ BUSCA
+
     valor_buscado = 64
     print(f"Buscar um item na lista ({valor_buscado})")
+
     nodeX = L.busca_simples(valor_buscado)
+
     #a if condition else b
     nodeX.mostra_node() if nodeX else print("Item não encontrado!")
+    print()
 
     # ------------------------------ EXCLUIR
     valor_excluir = 64
     print(f"Elemento a ser excluído: ({valor_excluir})")
-    nodeX = L.excluir(valor_excluir)
+    nodeX = L.remover(valor_excluir)
     nodeX.mostra_node() if nodeX else print("Item não encontrado!")
     print()
     L.imprime_lista()
