@@ -89,6 +89,22 @@ class Lista_Encadeada:
 
             self.add_final_v2(numero_aleatorio)
 
+    def get_maior_e_menor(self):
+        maior = menor = self.inicio.valor
+
+        no_atual = self.inicio
+
+        while no_atual != None:
+            if no_atual.valor < menor:
+                menor = no_atual.valor
+            elif no_atual.valor > maior:
+                maior = no_atual.valor
+            
+            no_atual = no_atual.next
+        
+        return maior, menor
+
+
 if __name__ == '__main__':
     # ------------------------------ INSERÇÃO Números aleatórios
     L = Lista_Encadeada()
@@ -118,3 +134,5 @@ if __name__ == '__main__':
     nodeX.mostra_node() if nodeX else print("Item não encontrado!")
     print()
     L.imprime_lista()
+    
+    print("Maior e menor:", L.get_maior_e_menor())
