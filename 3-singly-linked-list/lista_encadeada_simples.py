@@ -63,18 +63,14 @@ class Lista_Encadeada:
             no_atual = no_atual.next
 
     def remover(self, valor):
-        no_atual = self.inicio
-        no_anterior = self.inicio
-        no_removido = None
+        no_atual = no_anterior = self.inicio
 
-        # Tratar primeiro caso: os "ponteiros" apontam para o primero nó
         if no_atual.valor == valor:
             no_removido = no_atual
             self.inicio = no_atual.next
 
             return no_removido
 
-        # Resto
         no_atual = no_atual.next
 
         while no_atual != None:
@@ -92,7 +88,6 @@ class Lista_Encadeada:
             numero_aleatorio = randint(0, 100)
 
             self.add_final_v2(numero_aleatorio)
-
 
 if __name__ == '__main__':
     # ------------------------------ INSERÇÃO Números aleatórios
