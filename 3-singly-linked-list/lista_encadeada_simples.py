@@ -84,7 +84,7 @@ class Lista_Encadeada:
             no_anterior = no_anterior.next
 
     def add_numeros_aleatorios(self, quantidade):
-        for i in range(10):
+        for i in range(quantidade):
             numero_aleatorio = randint(0, 100)
 
             self.add_final_v2(numero_aleatorio)
