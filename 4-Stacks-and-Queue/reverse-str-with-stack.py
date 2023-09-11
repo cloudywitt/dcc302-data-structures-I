@@ -18,9 +18,7 @@ class Stack:
     
     def pop(self):
         if self.is_empty():
-            print("The list is empty")
-            
-            return
+            raise IndexError("The stack is empty")
 
         item_removed = self.top.data
         self.top = self.top.next
@@ -30,15 +28,14 @@ class Stack:
 
 def reverse_string(string):
     if not isinstance(string, str):
-        print("Not a string")
-
-        return
+        raise TypeError("Not a string")
     
     str_stack = Stack()
-    str_reversed = ""
 
     for letter in string:
         str_stack.push(letter)
+
+    str_reversed = ""
     
     while not str_stack.is_empty():
         str_reversed += str_stack.pop()
@@ -50,4 +47,3 @@ if __name__ == "__main__":
     user_string = input("Enter a string: ")
 
     print(reverse_string(user_string))
-    
