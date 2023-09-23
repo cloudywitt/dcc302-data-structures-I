@@ -1,215 +1,320 @@
 from tkinter import *
+from PIL import ImageTk, Image
 import random
-from PIL import Image, ImageTk
 
-# --------- Janela Principal
 root = Tk()
-root.title("Freecell - DCC")
 root.geometry("1100x700")
-root.configure(background="green")
+root.config(bg="green")
 
-# 8 pilhas
-p1 = []
-p2 = []
-p3 = []
-p4 = []
-p5 = []
-p6 = []
-p7 = []
-p8 = []
+cards_on_foundation = 0
+moves = 0
 
+class Cell:
+    def __init__(self, hgbd, location) -> None:
+        self.location = location
 
-class CardImage:
-    def __init__(self, name, root, group):
+        self.c = Frame(
+                    root,
+                    highlightbackground=hgbd,
+                    highlightthickness=2,
+                    background="green",
+                    width=100,
+                    height=145,
+                )
+
+        self.c.bind("<Button-1>", lambda event: click_frame(self))
+
+class Card:
+    def __init__(self, rt, name, previous, next=None) -> None:
         self.name = name
-        self.group = group
-        self.card_img = Image.open(f'cards/{name}.png')
-        self.card_img_final = ImageTk.PhotoImage(self.card_img)
-        self.bt = Button(root, image=self.card_img_final, command=lambda: selectedCard(
-            self,  self.name), borderwidth=0)
+        self.rank = int(self.name.split("_")[0])
+        self.suit = self.name.split("_")[2]
+        self.color = "red" if (self.suit == "hearts" or self.suit == "diamonds") else "black"
+
+        self.location = None
+        self.previous = previous
+        self.next = next
+
+        self.img = ImageTk.PhotoImage(Image.open(f"cards/{self.name}.png"))
+        self.button = Button(rt)
+        self.button.config(image=self.img, relief="sunken")
+        self.button.bind("<Button-1>", lambda event: click_card(self))
+
+    def is_top(self) -> bool:
+        return self.next == None
+
+    def is_clickable(self) -> bool:
+        if not self.is_top() and self.location != "foundation":
+            aux = self
+
+            while aux.next != None:
+                print("First while")
+                if aux.rank - 1 != aux.next.rank or aux.color == aux.next.color:
+                    return False
+
+                aux = aux.next
+
+        return True
+        
+    def __repr__(self) -> str:
+        return f"""Name: {self.name}
+    Previous: {self.previous.name if self.previous != None else None}
+    Next: {self.next.name if self.next != None else None}
+    Is top: {self.is_top()}
+    Location: {self.location}"""
+
+    def set_button(self):
+        self.button.bind("<Button-1>", lambda event: click_card(self))
+
+last_card = None
+
+def click_card(current_card) -> None:
+    global last_card, cards_on_foundation, moves
+
+    print("-" * 50)
+    print("Current card info:")
+    print(current_card)
+    print("-" * 50)
+
+    if not current_card.is_clickable():
+        print("Card is not clickable")
+        return
+
+    if last_card == None and current_card.is_clickable():
+        if current_card.location == "foundation":
+            print("Cannot move from foundation")
+            return
+
+        print("First time clicking a card")
+        aux = current_card
+        
+        while aux != None:
+            print("Colorized")
+            aux.button.configure(highlightthickness=4, highlightbackground="#37d3ff")
+            aux = aux.next
+
+        last_card = current_card
+    elif last_card == current_card: 
+        aux = current_card
+
+        while aux != None:
+            aux.button.configure(highlightthickness=0)
+            aux = aux.next
+
+        last_card = None
+    elif current_card.location == "free": 
+        print("This free cell is been used")
+    elif last_card.rank == current_card.rank - 1 or last_card.rank == current_card.rank + 1:
+        if current_card.location == None and last_card.color == current_card.color:
+            print("Not a valid card")
+            return
+
+        if current_card.location == "foundation":
+            if last_card.suit != current_card.suit or last_card.rank < current_card.rank:
+                print("Not a valid card")
+                return
 
 
-global carta_selecionada
-carta_selecionada = []
+        y_space = 0 if current_card.location == "foundation" else 40
 
+        aux = last_card
+        
+        if aux.previous != None:
+            aux.previous.next = None
+            aux.previous = None
 
-def selectedCard(card_com, name_card):
-    print(name_card)
-    print(card_com)
+        while aux != None:
+            aux.button.place(x=current_card.button.winfo_x(), y=current_card.button.winfo_y() + y_space)
+            aux.button.lift()
+            y_space += 40
+            aux = aux.next
 
-    if (len(carta_selecionada) > 0):
-        old_card = carta_selecionada.pop()
-        old_card.bt.configure(highlightthickness=0)
-        print(len(carta_selecionada))
-        if (old_card != card_com):
-            carta_selecionada.append(card_com)
-            card_com.bt.configure(highlightthickness=4,
-                                  highlightbackground="#37d3ff")
+        
+        
+
+        current_card.next = last_card
+        last_card.location = current_card.location
+
+        if current_card.location == "foundation":
+            cards_on_foundation += 1
+            print(cards_on_foundation)
+
+            if cards_on_foundation == 52:
+                print("YOU WIN")
+
+                win_label = Label(root, width=20, height=4, text=f"You win!\n\nScore: {100000 // moves}pts")
+                win_label.place(relx=.5, rely=.5, anchor="center")
+                
+        
+        last_card.previous = current_card
+        
+        
+
+        
+        aux = last_card
+
+        while aux != None:
+            aux.button.configure(highlightthickness=0)
+            aux = aux.next
+
+        
+        last_card = None
+        moves += 1
+
+def click_frame(frame) -> None:
+    global last_card
+    global foundations_filled
+    global cards_on_foundation
+    global moves
+
+    print("Frame type:", frame.location)
+    if last_card == None or not last_card.is_clickable(): 
+        return
+
+    print("clicked frame")
+
+    if frame.location == "foundation" and last_card.rank != 1:
+        print("Invalid card for foundation")
+        return
+
+    if frame.location == None:
+        y_space = 0
+
+        aux = last_card
+
+        while aux != None:
+            aux.button.place(x=frame.c.winfo_x(), y=frame.c.winfo_y() + y_space)
+            aux.button.lift()
+            y_space += 40
+            aux = aux.next
     else:
-        carta_selecionada.append(card_com)
-        card_com.bt.configure(highlightthickness=4,
-                              highlightbackground="#37d3ff")
+        if frame.location == "foundation":
+            cards_on_foundation += 1
+            print("Cards on foundation:", cards_on_foundation)
+
+        last_card.button.place(x=frame.c.winfo_x(), y=frame.c.winfo_y())
+        last_card.button.lift()
+
+    last_card.location = frame.location
+
+    if last_card.previous != None:
+        last_card.previous.next = None
+        last_card.previous = None
+
+    last_card.previous = None
+    
+    
+    aux = last_card
+
+    while aux != None:
+        aux.button.configure(highlightthickness=0)
+        aux = aux.next
+
+    last_card = None
+    moves += 1
 
 
-def start_game():
-    # --- Criar baralho
-    naipes = ["ouros", "paus", "copas", "espadas"]
-    valores = range(1, 14)
+deck_of_cards = []
 
-    deck = []
+card_stacks = [[] for n in range(8)]
 
-    for naipe in naipes:
-        for v in valores:
-            deck.append(f'{v}_of_{naipe}')
+for n in range(7):
+        for stack in card_stacks:
+            if len(deck_of_cards) > 0:
+                picked_card = random.choice(deck_of_cards)
+                deck_of_cards.remove(picked_card)
+                picked_card = Card(root, picked_card, previous=stack[-1] if len(stack) > 0 else None)
 
-    print(deck)
-    print(len(deck))
+                if len(stack) > 0:
+                    stack[-1].next = picked_card
 
-    # --- Distribuir as cartas entre 8 pilhas
-    for i in range(7):
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p1.append(card)
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p2.append(card)
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p3.append(card)
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p4.append(card)
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p5.append(card)
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p6.append(card)
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p7.append(card)
-        if (len(deck) > 0):
-            card = random.choice(deck)
-            deck.remove(card)
-            p8.append(card)
-
-    make_screen()
+                stack.append(picked_card)
 
 
-def frame_clicked(frame_name):
-    if carta_selecionada:
-        print(carta_selecionada[0])
-        print(carta_selecionada[0].group[2])
+free_cell = []
+foundations = []
+base_frames = []
 
-        carta_selecionada[0].bt.place(
-            x=frame_name.winfo_x(), y=frame_name.winfo_y())
-        carta_selecionada[0].bt.lift()
+def play():
+    global deck_of_cards, card_stacks, free_cell, foundations, base_frames
 
-    else:
-        print("nada selecionado!")
+    free_cell = [Cell("lightgreen", "free") for x in range(4)]
+    foundations = [Cell("lightgrey", "foundation") for x in range(4)]
+    base_frames = [Cell("lightgreen", None) for n in range(8)]
 
+    suits = ("clubs", "diamonds", "hearts", "spades")
 
-def make_screen():
+    for rank in range(1, 14):
+        for suit in suits:
+            deck_of_cards.append(f"{rank}_of_{suit}")
 
-    # Cria catras como botões e coloca na tela
+    for n in range(7):
+        for stack in card_stacks:
+            if len(deck_of_cards) > 0:
+                picked_card = random.choice(deck_of_cards)
+                deck_of_cards.remove(picked_card)
+                picked_card = Card(root, picked_card, previous=stack[-1] if len(stack) > 0 else None)
 
-    pos_x = 30
-    pos_y = 200
-    fator_x = 125
-    fator_y = 40
+                if len(stack) > 0:
+                    stack[-1].next = picked_card
 
-    for i in range(len(p1)):
-        card_new = CardImage(p1[i], root, p1)
-        card_new.bt.place(x=pos_x, y=pos_y+(fator_y*i))
+                stack.append(picked_card)
 
-    for i in range(len(p2)):
-        card_new = CardImage(p2[i], root, p2)
-        card_new.bt.place(x=pos_x+(fator_x*1), y=pos_y+(fator_y*i))
+    
+    x_pos = 30
 
-    for i in range(len(p3)):
-        card_new = CardImage(p3[i], root, p3)
-        card_new.bt.place(x=pos_x+(fator_x*2), y=pos_y+(fator_y*i))
+    for i, stack in enumerate(card_stacks):
+        y_pos = 215
 
-    for i in range(len(p4)):
-        card_new = CardImage(p4[i], root, p4)
-        card_new.bt.place(x=pos_x+(fator_x*3), y=pos_y+(fator_y*i))
+        base_frames[i].c.place(x=x_pos, y=y_pos)
+        for card in stack:
+            card.button.place(x=x_pos, y=y_pos)
+            card.button.lift()
+            y_pos += 40
 
-    for i in range(len(p5)):
-        card_new = CardImage(p5[i], root, p5)
-        card_new.bt.place(x=pos_x+(fator_x*4), y=pos_y+(fator_y*i))
+        x_pos += 125
 
-    for i in range(len(p6)):
-        card_new = CardImage(p6[i], root, p6)
-        card_new.bt.place(x=pos_x+(fator_x*5), y=pos_y+(fator_y*i))
+    
+    x_pos = 20
+    y_pos = 35
 
-    for i in range(len(p7)):
-        card_new = CardImage(p7[i], root, p7)
-        card_new.bt.place(x=pos_x+(fator_x*6), y=pos_y+(fator_y*i))
-
-    for i in range(len(p8)):
-        card_new = CardImage(p8[i], root, p8)
-        card_new.bt.place(x=pos_x+(fator_x*7), y=pos_y+(fator_y*i))
-
-    # -------------------------------------------  FRAMES
-    # ---- Frames de Troca
-    ft_posX = 20
-    ft_posY = 20
-    ft_fator = 110
-    frame1 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgreen", highlightthickness=2)
-    frame1.bind("<Button-1>", lambda event: frame_clicked(frame1))
-    frame1.place(x=ft_posX+(ft_fator*0), y=ft_posY)
-
-    frame2 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgreen", highlightthickness=2)
-    frame2.bind("<Button-1>", lambda event: frame_clicked(frame2))
-    frame2.place(x=ft_posX+(ft_fator*1), y=ft_posY)
-
-    frame3 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgreen", highlightthickness=2)
-    frame3.bind("<Button-1>", lambda event: frame_clicked(frame3))
-    frame3.place(x=ft_posX+(ft_fator*2), y=ft_posY)
-
-    frame4 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgreen", highlightthickness=2)
-    frame4.bind("<Button-1>", lambda event: frame_clicked(frame4))
-    frame4.place(x=ft_posX+(ft_fator*3), y=ft_posY)
-
-    # ---- Frames Finais
-    ff_posX = 650
-    ff_posY = 20
-    ff_fator = 110
-    frame5 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgray", highlightthickness=2)
-    frame5.place(x=ff_posX+(ff_fator*0), y=ff_posY)
-
-    frame6 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgray", highlightthickness=2)
-    frame6.place(x=ff_posX+(ff_fator*1), y=ff_posY)
-
-    frame7 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgray", highlightthickness=2)
-    frame7.place(x=ff_posX+(ff_fator*2), y=ff_posY)
-
-    frame8 = Frame(root, width=100, height=145, background="green",
-                   highlightbackground="lightgray", highlightthickness=2)
-    frame8.place(x=ff_posX+(ff_fator*3), y=ff_posY)
+    for camp in free_cell:
+        camp.c.place(x=x_pos, y=y_pos)
+        x_pos += 110
 
 
-# -------------------------------------------------------------------------
-start_game()
+    x_pos = 650
 
-# Logo DCC
-logo = PhotoImage(file="imgs/logo-freecell-dcc-mini.png")
-logoLabel = Label(root, image=logo, background="green")
-logoLabel.imagem = logo
-logoLabel.pack()
+    for camp in foundations:
+        camp.c.place(x=x_pos, y=y_pos)
+        x_pos += 110
+
+
+def restart():
+    global card_stacks, free_cell, foundations, last_card, base_frames, cards_on_foundation, moves
+
+    for i, stack in enumerate(card_stacks):
+        cards_num = len(stack)
+        base_frames[i].c.destroy() 
+
+        for i in range(cards_num):
+            removed_card = stack.pop()
+            removed_card.button.destroy()
+
+    for i in range(4):
+        free_cell[i].c.destroy()
+        foundations[i].c.destroy()
+
+    last_card = None
+    cards_on_foundation = 0
+    moves = 0
+
+    play()
+
+
+restart_button = Button(root, text="New Game", command=restart)
+restart_button.place(x=0, y=0)
+
+play()
 
 root.mainloop()
