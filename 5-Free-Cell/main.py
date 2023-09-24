@@ -7,8 +7,6 @@ import random
 """
 TO-DO:
 USE RANDOM.SHUFFLE TO SHUFFLE THE DECK WITH NO NEED IN CREATING ANOTHER
-FIX THE MOVE TO (FRAME) AND MOVE PILE TO (FRAME) METHODS
-PUT CLICK CARD AND CLICK FRAME IN CLASSES
 """
 
 root: Tk = Tk()
@@ -52,7 +50,7 @@ class Cell:
         self.type: str = type
         self.hgbd: str = "lightgrey" if self.type == "foundation" else "lightgreen"
 
-        self.frame: Frame = Frame(   # .frame.
+        self.frame: Frame = Frame(
                     root,
                     highlightbackground=self.hgbd,
                     highlightthickness=2,
@@ -61,10 +59,25 @@ class Cell:
                     height=145,
                 )
 
-        self.frame.bind("<Button-1>", lambda event: click_frame(self))
+        self.frame.bind("<Button-1>", self.click)
 
-    def click(self) -> None:
-        ...
+    def click(self, event) -> None:
+        global last_card,cards_left
+
+        if last_card == None:
+            return
+
+        if not last_card.can_move_to(self):
+            return
+
+        last_card.move_to(self)
+
+        if self.type == "foundation":
+            cards_left -= 1
+            print("Cards left:", cards_left)
+
+        last_card.deselect()
+        last_card = None
 
 
 class Card:
@@ -153,6 +166,9 @@ class Card:
                 print("Condition 2")
                 # if self.rank == 1:
                 return True
+
+            if destination.type == "board": # Check after to refactor
+                return True
                 
             return False
             
@@ -185,7 +201,7 @@ class Card:
                 y_space: int = 0
 
                 self.button.place(x=destination.frame.winfo_x(), y=destination.frame.winfo_y() + y_space)
-            self.button.lift()
+                self.button.lift()
                 
             # Change position references
             if self.previous:
@@ -205,6 +221,7 @@ class Card:
             destination_x = destination.button.winfo_x()
             destination_y = destination.button.winfo_y()
         else:
+            y_space = 0
             destination_x = destination.frame.winfo_x()
             destination_y = destination.frame.winfo_y()
 
@@ -296,61 +313,25 @@ class Card:
 #         last_card = None
 
 
-def click_frame(cell: Cell) -> None:
-    global last_card,cards_left
-    print("Can move to frame?", last_card.can_move_to(cell) if last_card else False)
+# def click_frame(cell: Cell) -> None:
+#     global last_card,cards_left
+#     print("Can move to frame?", last_card.can_move_to(cell) if last_card else False)
 
-    print("Frame type:", cell.type)
-    if last_card == None: # To handle NoneType errors
-        return
+#     print("Frame type:", cell.type)
+#     if last_card == None:
+#         return
 
-    # if frame.type == "foundation" and last_card.rank != 1:
-    #     print("Invalid card for foundation")
-    #     return
-    if not last_card.can_move_to(cell):
-        return
+#     if not last_card.can_move_to(cell):
+#         return
 
-    last_card.move_to(cell)
+#     last_card.move_to(cell)
 
-        # START move_card_to(FRAME)
-        # y_space: int = 0
+#     if cell.type == "foundation":
+#         cards_left -= 1
+#         print("Cards left:", cards_left)
 
-        # aux: Card | None = last_card
-
-        # while aux != None:
-        #     aux.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y() + y_space)
-        #     aux.button.lift()
-        #     y_space += 40
-        #     aux = aux.next
-        # END end_move_card_to(FRAME)
-    if cell.type == "foundation": # is pile method to stop from going more than one? Or just card.next != None condition?
-        cards_left -= 1
-        print("Cards left:", cards_left)
-
-    last_card.deselect()
-        # last_card.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y())
-        # last_card.button.lift()
-
-    # ----------- location update
-    # last_card.location = cell.type
-
-    # if last_card.previous:
-    #     last_card.previous.next = None
-
-        # Because otherwise it is already None
-        # last_card.previous = None
-    
-    # unhilight all cards
-
-    # DESELECT cards
-    # last_card.deselect()
-    # aux = last_card
-
-    # while aux != None:
-    #     aux.button.configure(highlightthickness=0)
-    #     aux = aux.next
-
-    last_card = None
+#     last_card.deselect()
+#     last_card = None
 
 
 deck_of_cards = []
