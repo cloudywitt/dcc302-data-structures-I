@@ -12,11 +12,39 @@ PUT CLICK CARD AND CLICK FRAME IN CLASSES
 """
 
 root: Tk = Tk()
+root.title("Free Cell")
 root.geometry("1100x700")
 root.config(bg="green")
 
+win_label = Label(root, width=20, height=4)
+
 cards_left: int = 52
-moves: int = 0 # change to time if possible
+last_card: Card | None = None
+
+
+class Timer:
+    def __init__(self) -> None:
+        self.seconds: int = 0
+        self.minutes: int = 0
+
+        self.label = Label(root, text=f"{self.minutes:02}:{self.seconds:02}")
+        self.label.pack()
+
+    def update_timer(self) -> None:
+        if self.seconds < 59:
+            self.seconds += 1
+        else:
+            self.minutes += 1
+            self.seconds = 0
+
+        self.label.configure(text=f"{self.minutes:02}:{self.seconds:02}")
+        root.after(1000, self.update_timer)
+
+    def reset(self) -> None:
+        self.minutes = self.seconds = 0
+
+    def get_time_in_seconds(self) -> int:
+        return self.minutes * 60 + self.seconds
 
 
 class Cell:
@@ -24,7 +52,7 @@ class Cell:
         self.type: str = type
         self.hgbd: str = "lightgrey" if self.type == "foundation" else "lightgreen"
 
-        self.c: Frame = Frame(
+        self.frame: Frame = Frame(   # .frame.
                     root,
                     highlightbackground=self.hgbd,
                     highlightthickness=2,
@@ -33,7 +61,7 @@ class Cell:
                     height=145,
                 )
 
-        self.c.bind("<Button-1>", lambda event: click_frame(self))
+        self.frame.bind("<Button-1>", lambda event: click_frame(self))
 
     def click(self) -> None:
         ...
@@ -53,7 +81,7 @@ class Card:
         self.img = ImageTk.PhotoImage(Image.open(f"cards/{self.name}.png"))
         self.button: Button = Button(rt)
         self.button.config(image=self.img, relief="sunken")
-        self.button.bind("<Button-1>", lambda event: click_card(self))
+        self.button.bind("<Button-1>", self.click) # self.button.bind("<Button-1>", lambda event: click_card(self))
 
     def __repr__(self) -> str:
         return f"""Name: {self.name}
@@ -66,7 +94,7 @@ class Card:
         return self.next == None
 
     def is_clickable(self) -> bool:
-        if self.location == "foundation":
+        if self.location == "foundation" and last_card == None:
             return False
 
         if not self.is_top() and self.location == "board":
@@ -114,7 +142,20 @@ class Card:
 
             return False
         elif isinstance(destination, Cell):
-            ...
+            # if destination.type != "board" and not self.is_top():
+            #     print("Condition 1")
+            #     return False
+            if destination.type == "free" and self.is_top():
+                print("Condition 1")
+                return True
+
+            if destination.type == "foundation" and self.rank == 1:
+                print("Condition 2")
+                # if self.rank == 1:
+                return True
+                
+            return False
+            
 
     def move_to(self, destination: Card | Cell) -> None:
         if isinstance(destination, Card):
@@ -138,12 +179,12 @@ class Card:
             # Change location reference
             self.location = destination.location
         elif isinstance(destination, Cell):
-            if destination.type == "foundation" and self.rank != 1:
-                return
-
             y_space: int = 0
 
-            self.button.place(x=destination.c.winfo_x(), y=destination.c.winfo_y() + y_space)
+            if destination.type == "board":
+                self.__move_pile_to(destination)
+
+            self.button.place(x=destination.frame.winfo_x(), y=destination.frame.winfo_y() + y_space)
             self.previous.next = None
             self.previous = destination
             self.button.lift()
@@ -158,8 +199,8 @@ class Card:
             destination_x = destination.button.winfo_x()
             destination_y = destination.button.winfo_y()
         else:
-            destination_x = destination.c.winfo_x()
-            destination_y = destination.c.winfo_y()
+            destination_x = destination.frame.winfo_x()
+            destination_y = destination.frame.winfo_y()
 
         while aux != None:
             aux.button.place(x=destination_x, y=destination_y + y_space)
@@ -168,89 +209,135 @@ class Card:
             aux = aux.next
             y_space += 40
 
+    def click(self, event) -> None:
+        global last_card, cards_left, win_label
 
-last_card: Card | None = None
+        print("-" * 50)
+        print("Clicked card info:")
+        print(self)
+        print("-" * 50)
 
-def click_card(clicked_card: Card) -> None:
-    global last_card, cards_left, moves
+        if not self.is_clickable(): # change to "is not clickable"
+            print("Card is not clickable")
+        elif last_card == None: # First time clicking a card
+            print("First time clicking a card")
+            self.select()
 
-    print("-" * 50)
-    print("Clicked card info:")
-    print(clicked_card)
-    print("-" * 50)
+            last_card = self
+        elif last_card == self: # click 2 times on the same card
+            last_card.deselect()
 
-    if not clicked_card.is_clickable(): # change to "is not clickable"
-        print("Card is not clickable")
-    elif last_card == None: # First time clicking a card
-        print("First time clicking a card")
-        clicked_card.select()
+            last_card = None
+        elif last_card.can_move_to(self):
+            print("Yes it can")
+            last_card.move_to(self)
 
-        last_card = clicked_card
-    elif last_card == clicked_card: # click 2 times on the same card
-        last_card.deselect()
+            if self.location == "foundation":
+                cards_left -= 1
+                print(cards_left)
 
-        last_card = None
-    elif last_card.can_move_to(clicked_card):
-        print("Yes it can")
-        last_card.move_to(clicked_card)
+                # turn into a function 
+                if cards_left == 0:
+                    print("YOU WIN")
 
-        if clicked_card.location == "foundation":
-            cards_left -= 1
-            print(cards_left)
+                    points = 10000 - timer.get_time_in_seconds()
+                    win_label["text"] = f"You win!\n\nScore: {points}pts"
+                    win_label.place(relx=.5, rely=.5, anchor="center")
+        
+            last_card.deselect()
+            last_card = None
 
-            # turn into a function 
-            if cards_left == 0:
-                print("YOU WIN")
 
-                win_label = Label(root, width=20, height=4, text=f"You win!\n\nScore: {100000 // moves}pts")
-                win_label.place(relx=.5, rely=.5, anchor="center")
+# last_card: Card | None = None
+
+
+# def click_card(clicked_card: Card) -> None:
+#     global last_card, cards_left, win_label
+
+#     print("-" * 50)
+#     print("Clicked card info:")
+#     print(clicked_card)
+#     print("-" * 50)
+
+#     if not clicked_card.is_clickable(): # change to "is not clickable"
+#         print("Card is not clickable")
+#     elif last_card == None: # First time clicking a card
+#         print("First time clicking a card")
+#         clicked_card.select()
+
+#         last_card = clicked_card
+#     elif last_card == clicked_card: # click 2 times on the same card
+#         last_card.deselect()
+
+#         last_card = None
+#     elif last_card.can_move_to(clicked_card):
+#         print("Yes it can")
+#         last_card.move_to(clicked_card)
+
+#         if clicked_card.location == "foundation":
+#             cards_left -= 1
+#             print(cards_left)
+
+#             # turn into a function 
+#             if cards_left == 0:
+#                 print("YOU WIN")
+
+#                 points = 10000 - timer.get_time_in_seconds()
+#                 win_label["text"] = f"You win!\n\nScore: {points}pts"
+#                 win_label.place(relx=.5, rely=.5, anchor="center")
     
-        last_card.deselect()
-        last_card = None
-        moves += 1
+#         last_card.deselect()
+#         last_card = None
 
-def click_frame(frame) -> None:
-    global last_card
-    global cards_left
-    global moves
 
-    print("Frame type:", frame.type)
-    if last_card == None or not last_card.is_clickable(): # only one card permitted
+def click_frame(cell: Cell) -> None:
+    global last_card,cards_left
+    print("Can move to frame?", last_card.can_move_to(cell) if last_card != None else False)
+
+    print("Frame type:", cell.type)
+    if last_card == None: # To handle NoneType errors
         return
 
-    print("clicked frame")
-
-    if frame.type == "foundation" and last_card.rank != 1:
-        print("Invalid card for foundation")
+    # if frame.type == "foundation" and last_card.rank != 1:
+    #     print("Invalid card for foundation")
+    #     return
+    if not last_card.can_move_to(cell):
         return
 
-    if frame.type == "board":
-        y_space = 0
+    if cell.type == "board":
+        # move_card_to(FRAME)
 
-        aux = last_card
+        y_space: int = 0
+
+        aux: Card | None = last_card
 
         while aux != None:
-            aux.button.place(x=frame.c.winfo_x(), y=frame.c.winfo_y() + y_space)
+            aux.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y() + y_space)
             aux.button.lift()
             y_space += 40
             aux = aux.next
+        # end_move_card_to(FRAME)
     else:
-        if frame.type == "foundation":
+        if cell.type == "foundation": # is pile method to stop from going more than one? Or just card.next != None condition?
             cards_left -= 1
-            print("Cards on foundation:", cards_left)
+            print("Cards left:", cards_left)
 
-        last_card.button.place(x=frame.c.winfo_x(), y=frame.c.winfo_y())
+        last_card.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y())
         last_card.button.lift()
 
-    last_card.location = frame.type
+    # location update
+    last_card.location = cell.type
 
     if last_card.previous != None:
         last_card.previous.next = None
-        last_card.previous = None
 
-    last_card.previous = None
-    # last_card.next = None
+        # Because otherwise it is already None
+        last_card.previous = None
+    
     # unhilight all cards
+
+    # deselect cards
+    # last_card.deselect()
     aux = last_card
 
     while aux != None:
@@ -258,7 +345,6 @@ def click_frame(frame) -> None:
         aux = aux.next
 
     last_card = None
-    moves += 1
 
 
 deck_of_cards = []
@@ -318,7 +404,7 @@ def play():
     for i, stack in enumerate(card_stacks):
         y_pos = 215
 
-        base_frames[i].c.place(x=x_pos, y=y_pos)
+        base_frames[i].frame.place(x=x_pos, y=y_pos)
         for card in stack:
             card.button.place(x=x_pos, y=y_pos)
             card.button.lift()
@@ -331,35 +417,36 @@ def play():
     y_pos = 35
 
     for camp in free_cell:
-        camp.c.place(x=x_pos, y=y_pos)
+        camp.frame.place(x=x_pos, y=y_pos)
         x_pos += 110
 
 
     x_pos = 650
 
     for camp in foundations:
-        camp.c.place(x=x_pos, y=y_pos)
+        camp.frame.place(x=x_pos, y=y_pos)
         x_pos += 110
 
 
 def restart():
-    global card_stacks, free_cell, foundations, last_card, base_frames, cards_left, moves
+    global card_stacks, free_cell, foundations, last_card, base_frames, cards_left, win_label
 
     for i, stack in enumerate(card_stacks):
         cards_num = len(stack)
-        base_frames[i].c.destroy() # may cause something
+        base_frames[i].frame.destroy() # may cause something
 
         for i in range(cards_num):
             removed_card = stack.pop()
             removed_card.button.destroy()
 
     for i in range(4):
-        free_cell[i].c.destroy()
-        foundations[i].c.destroy()
+        free_cell[i].frame.destroy()
+        foundations[i].frame.destroy()
 
     last_card = None
     cards_left = 52
-    moves = 0
+    win_label.place_forget()
+    timer.reset()
 
     play()
 
@@ -369,6 +456,8 @@ restart_button.place(x=0, y=0)
 
 # Main
 if __name__ == "__main__":
-    play()
-    root.mainloop()
+    timer = Timer()
 
+    play()
+    root.after(1000, timer.update_timer)
+    root.mainloop()
