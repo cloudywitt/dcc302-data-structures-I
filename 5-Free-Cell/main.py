@@ -68,7 +68,7 @@ class Cell:
 
 
 class Card:
-    def __init__(self, rt: Tk , name: str, previous: Card | None = None, next: Card | None = None) -> None:
+    def __init__(self, rt: Tk, name: str, previous: Card | None = None, next: Card | None = None) -> None:
         self.name: str = name
         self.rank: int = int(self.name.split("_")[0])
         self.suit: str = self.name.split("_")[2]
@@ -85,8 +85,8 @@ class Card:
 
     def __repr__(self) -> str:
         return f"""Name: {self.name}
-    Previous: {self.previous.name if self.previous != None else None}
-    Next: {self.next.name if self.next != None else None}
+    Previous: {self.previous.name if self.previous else None}
+    Next: {self.next.name if self.next else None}
     Is top: {self.is_top()}
     Location: {self.location}"""
 
@@ -159,7 +159,7 @@ class Card:
 
     def move_to(self, destination: Card | Cell) -> None:
         if isinstance(destination, Card):
-            # Move card
+            # Move card image
             y_space: int = 40 if destination.location == "board" else 0
 
             if destination.location == "board":
@@ -179,15 +179,21 @@ class Card:
             # Change location reference
             self.location = destination.location
         elif isinstance(destination, Cell):
-            y_space: int = 0
-
             if destination.type == "board":
                 self.__move_pile_to(destination)
+            else:
+                y_space: int = 0
 
-            self.button.place(x=destination.frame.winfo_x(), y=destination.frame.winfo_y() + y_space)
-            self.previous.next = None
-            self.previous = destination
+                self.button.place(x=destination.frame.winfo_x(), y=destination.frame.winfo_y() + y_space)
             self.button.lift()
+                
+            # Change position references
+            if self.previous:
+                self.previous.next = None
+                self.previous = None
+
+            # Change location reference
+            self.location = destination.type
 
     def __move_pile_to(self, destination: Card | Cell) -> None:
         # Move card
@@ -217,9 +223,9 @@ class Card:
         print(self)
         print("-" * 50)
 
-        if not self.is_clickable(): # change to "is not clickable"
+        if not self.is_clickable():
             print("Card is not clickable")
-        elif last_card == None: # First time clicking a card
+        elif last_card == None: # first time clicking a card
             print("First time clicking a card")
             self.select()
 
@@ -292,7 +298,7 @@ class Card:
 
 def click_frame(cell: Cell) -> None:
     global last_card,cards_left
-    print("Can move to frame?", last_card.can_move_to(cell) if last_card != None else False)
+    print("Can move to frame?", last_card.can_move_to(cell) if last_card else False)
 
     print("Frame type:", cell.type)
     if last_card == None: # To handle NoneType errors
@@ -304,45 +310,45 @@ def click_frame(cell: Cell) -> None:
     if not last_card.can_move_to(cell):
         return
 
-    if cell.type == "board":
-        # move_card_to(FRAME)
+    last_card.move_to(cell)
 
-        y_space: int = 0
+        # START move_card_to(FRAME)
+        # y_space: int = 0
 
-        aux: Card | None = last_card
+        # aux: Card | None = last_card
 
-        while aux != None:
-            aux.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y() + y_space)
-            aux.button.lift()
-            y_space += 40
-            aux = aux.next
-        # end_move_card_to(FRAME)
-    else:
-        if cell.type == "foundation": # is pile method to stop from going more than one? Or just card.next != None condition?
-            cards_left -= 1
-            print("Cards left:", cards_left)
+        # while aux != None:
+        #     aux.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y() + y_space)
+        #     aux.button.lift()
+        #     y_space += 40
+        #     aux = aux.next
+        # END end_move_card_to(FRAME)
+    if cell.type == "foundation": # is pile method to stop from going more than one? Or just card.next != None condition?
+        cards_left -= 1
+        print("Cards left:", cards_left)
 
-        last_card.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y())
-        last_card.button.lift()
+    last_card.deselect()
+        # last_card.button.place(x=cell.frame.winfo_x(), y=cell.frame.winfo_y())
+        # last_card.button.lift()
 
-    # location update
-    last_card.location = cell.type
+    # ----------- location update
+    # last_card.location = cell.type
 
-    if last_card.previous != None:
-        last_card.previous.next = None
+    # if last_card.previous:
+    #     last_card.previous.next = None
 
         # Because otherwise it is already None
-        last_card.previous = None
+        # last_card.previous = None
     
     # unhilight all cards
 
-    # deselect cards
+    # DESELECT cards
     # last_card.deselect()
-    aux = last_card
+    # aux = last_card
 
-    while aux != None:
-        aux.button.configure(highlightthickness=0)
-        aux = aux.next
+    # while aux != None:
+    #     aux.button.configure(highlightthickness=0)
+    #     aux = aux.next
 
     last_card = None
 
