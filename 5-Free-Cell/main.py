@@ -7,6 +7,7 @@ import random
 """
 TO-DO:
 USE RANDOM.SHUFFLE TO SHUFFLE THE DECK WITH NO NEED IN CREATING ANOTHER
+SEPARATE IN MODULES
 """
 
 root: Tk = Tk()
@@ -29,6 +30,7 @@ class Timer:
         self.label.pack()
 
     def update_timer(self) -> None:
+        """Increments 1 second and update timer format if necessary."""
         if self.seconds < 59:
             self.seconds += 1
         else:
@@ -39,9 +41,11 @@ class Timer:
         root.after(1000, self.update_timer)
 
     def reset(self) -> None:
+        """Set minutes and seconds to 0."""
         self.minutes = self.seconds = 0
 
     def get_time_in_seconds(self) -> int:
+        """Returns the current time in seconds."""
         return self.minutes * 60 + self.seconds
 
 
@@ -62,7 +66,8 @@ class Cell:
         self.frame.bind("<Button-1>", self.click)
 
     def click(self, event) -> None:
-        global last_card,cards_left
+        """Handles cards interactions with cells."""
+        global last_card, cards_left
 
         if last_card == None:
             return
@@ -107,7 +112,8 @@ class Card:
         return self.next == None
 
     def is_clickable(self) -> bool:
-        if self.location == "foundation" and last_card == None:
+        """Checks if card/pile can be clicked (highlighted)"""
+        if last_card == None and self.location == "foundation":
             return False
 
         if not self.is_top() and self.location == "board":
@@ -125,6 +131,7 @@ class Card:
         return True
 
     def select(self) -> None:
+        """Highlights card/pile."""
         aux: Card | None = self
         
         while aux != None: # make it add to an array so I can check if the card below is in array to do nothing
@@ -132,6 +139,7 @@ class Card:
             aux = aux.next
 
     def deselect(self) -> None:
+        """Disable card's/pile's highlights."""
         aux: Card | None = self
 
         while aux != None:
@@ -139,6 +147,7 @@ class Card:
             aux = aux.next
 
     def can_move_to(self, destination: Card | Cell) -> bool:
+        """Checks if card/pile can be moved to destination."""
         if isinstance(destination, Card):
             if not destination.is_top():
                 return False
@@ -174,6 +183,7 @@ class Card:
             
 
     def move_to(self, destination: Card | Cell) -> None:
+        """Moves card/cards to destination and updates its status."""
         if isinstance(destination, Card):
             # Move card image
             y_space: int = 40 if destination.location == "board" else 0
@@ -212,6 +222,7 @@ class Card:
             self.location = destination.type
 
     def __move_pile_to(self, destination: Card | Cell) -> None:
+        """Private method to move more than one card at once."""
         # Move card
         y_space: int = 40
 
@@ -233,6 +244,7 @@ class Card:
             y_space += 40
 
     def click(self, event) -> None:
+        """Handle cards actions."""
         global last_card, cards_left, win_label
 
         print("-" * 50)
@@ -271,69 +283,6 @@ class Card:
             last_card = None
 
 
-# last_card: Card | None = None
-
-
-# def click_card(clicked_card: Card) -> None:
-#     global last_card, cards_left, win_label
-
-#     print("-" * 50)
-#     print("Clicked card info:")
-#     print(clicked_card)
-#     print("-" * 50)
-
-#     if not clicked_card.is_clickable(): # change to "is not clickable"
-#         print("Card is not clickable")
-#     elif last_card == None: # First time clicking a card
-#         print("First time clicking a card")
-#         clicked_card.select()
-
-#         last_card = clicked_card
-#     elif last_card == clicked_card: # click 2 times on the same card
-#         last_card.deselect()
-
-#         last_card = None
-#     elif last_card.can_move_to(clicked_card):
-#         print("Yes it can")
-#         last_card.move_to(clicked_card)
-
-#         if clicked_card.location == "foundation":
-#             cards_left -= 1
-#             print(cards_left)
-
-#             # turn into a function 
-#             if cards_left == 0:
-#                 print("YOU WIN")
-
-#                 points = 10000 - timer.get_time_in_seconds()
-#                 win_label["text"] = f"You win!\n\nScore: {points}pts"
-#                 win_label.place(relx=.5, rely=.5, anchor="center")
-    
-#         last_card.deselect()
-#         last_card = None
-
-
-# def click_frame(cell: Cell) -> None:
-#     global last_card,cards_left
-#     print("Can move to frame?", last_card.can_move_to(cell) if last_card else False)
-
-#     print("Frame type:", cell.type)
-#     if last_card == None:
-#         return
-
-#     if not last_card.can_move_to(cell):
-#         return
-
-#     last_card.move_to(cell)
-
-#     if cell.type == "foundation":
-#         cards_left -= 1
-#         print("Cards left:", cards_left)
-
-#     last_card.deselect()
-#     last_card = None
-
-
 deck_of_cards = []
 # distribute them randomly in 8 stacks
 card_stacks = [[] for n in range(8)]
@@ -360,7 +309,7 @@ free_cell = []
 foundations = []
 base_frames = []
 
-def play():
+def start():
     global deck_of_cards, card_stacks, free_cell, foundations, base_frames
 
     free_cell = [Cell("free") for _ in range(4)]
@@ -415,7 +364,7 @@ def play():
         x_pos += 110
 
 
-def restart():
+def restart() -> None:
     global card_stacks, free_cell, foundations, last_card, base_frames, cards_left, win_label
 
     for i, stack in enumerate(card_stacks):
@@ -435,16 +384,16 @@ def restart():
     win_label.place_forget()
     timer.reset()
 
-    play()
+    start()
 
 
-restart_button = Button(root, text="New Game", command=restart)
+restart_button = Button(root, text="new game", command=restart)
 restart_button.place(x=0, y=0)
 
 # Main
 if __name__ == "__main__":
     timer = Timer()
 
-    play()
+    start()
     root.after(1000, timer.update_timer)
     root.mainloop()
