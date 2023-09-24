@@ -4,6 +4,9 @@ from PIL import ImageTk, Image # pip install pillow
 from typing import Optional
 import random
 
+"""
+USE RANDOM>SHUFFLE TO SHUFFLE THE DECK WITH NO NEED IN CREATING ANOTHER
+"""
 
 root: Tk = Tk()
 root.geometry("1100x700")
@@ -11,6 +14,7 @@ root.config(bg="green")
 
 cards_left: int = 52
 moves: int = 0
+
 
 class Cell:
     def __init__(self, type: str) -> None:
@@ -31,6 +35,7 @@ class Cell:
     def click(self) -> None:
         ...
 
+
 class Card:
     def __init__(self, rt: Tk , name: str, previous: Card | None = None, next: Card | None = None) -> None:
         self.name: str = name
@@ -47,11 +52,21 @@ class Card:
         self.button.config(image=self.img, relief="sunken")
         self.button.bind("<Button-1>", lambda event: click_card(self))
 
+    def __repr__(self) -> str:
+        return f"""Name: {self.name}
+    Previous: {self.previous.name if self.previous != None else None}
+    Next: {self.next.name if self.next != None else None}
+    Is top: {self.is_top()}
+    Location: {self.location}"""
+
     def is_top(self) -> bool:
         return self.next == None
 
     def is_clickable(self) -> bool:
-        if not self.is_top() and self.location != "foundation":
+        if self.location == "foundation":
+            return False
+
+        if not self.is_top() and self.location == "board":
             aux: Card | None = self
 
             while aux.next != None:
@@ -60,6 +75,7 @@ class Card:
                 # if card below is not 1 rank lower or the colors are different
                 if aux.rank - 1 != aux.next.rank or aux.color == aux.next.color:
                     return False
+
                 aux = aux.next
 
         return True
@@ -78,26 +94,92 @@ class Card:
             aux.button.configure(highlightthickness=0)
             aux = aux.next
 
+    def can_move_to(self, destination: Card | Cell) -> bool:
+        if isinstance(destination, Card):
+            if not destination.is_top():
+                return False
+
+            if (destination.location == "board" and
+                self.rank + 1 == destination.rank and
+                self.color != destination.color):
+                return True
+            
+            if (destination.location == "foundation" and
+                self.rank - 1 == destination.rank and
+                self.suit == destination.suit):
+                return True
+
+            return False
+        elif isinstance(destination, Cell):
+            ...
+    # """
+    # if clicked_card.location == "free": # last_selected_card and 
+    #     print("This free cell is been used")
+    #     return
+
+    # if clicked_card.location == "board" and (last_card.rank + 1 != clicked_card.rank or last_card.color == clicked_card.color):
+    #     print("Not a valid card for board")
+    #     return
+
+    # if last_card.rank - 1 != clicked_card.rank or last_card.suit != clicked_card.suit:
+    #     # if last_card.suit != clicked_card.suit or last_card.rank < clicked_card.rank:
+    #     print("Not a valid card for foundation")
+    #     return
+    #     """
+        
+
     def move_to(self, destination: Card | Cell) -> None:
         if isinstance(destination, Card):
-            y_space: int = 40 if destination.location == "base" else 0
+            # Move card
+            y_space: int = 40 if destination.location == "board" else 0
 
-            self.button.place(x=destination.button.winfo_x(), y=destination.button.winfo_y() + y_space)
+            if destination.location == "board":
+                print("move pile")
+                self.move_pile_to(destination)
+            else:
+                self.button.place(x=destination.button.winfo_x(), y=destination.button.winfo_y() + y_space)
+                self.button.lift()
+                
+            # Change position references
+            if self.previous:
+                self.previous.next = None
+
+            self.previous = destination
+            destination.next = self
+
+            # Change location reference
+            self.location = destination.location
+        elif isinstance(destination, Cell):
+            if destination.type == "foundation" and self.rank != 1:
+                return
+
+            y_space: int = 0
+
+            self.button.place(x=destination.c.winfo_x(), y=destination.c.winfo_y() + y_space)
             self.previous.next = None
             self.previous = destination
             self.button.lift()
+
+    def move_pile_to(self, destination: Card | Cell) -> None:
+        # Move card
+        y_space: int = 40
+
+        aux: Card | None = self
         
-    # move to method? Card.can_move_to(card: Card) -> bool; can_move_to_cell(cell: Cell)? Or just one method?
+        if isinstance(destination, Card):
+            destination_x = destination.button.winfo_x()
+            destination_y = destination.button.winfo_y()
+        else:
+            destination_x = destination.c.winfo_x()
+            destination_y = destination.c.winfo_y()
 
-    def __repr__(self) -> str:
-        return f"""Name: {self.name}
-    Previous: {self.previous.name if self.previous != None else None}
-    Next: {self.next.name if self.next != None else None}
-    Is top: {self.is_top()}
-    Location: {self.location}"""
+        while aux != None:
+            aux.button.place(x=destination_x, y=destination_y + y_space)
+            aux.button.lift()
 
-    def set_button(self):
-        self.button.bind("<Button-1>", lambda event: click_card(self))
+            aux = aux.next
+            y_space += 40
+
 
 last_card: Card | None = None
 
@@ -113,93 +195,94 @@ def click_card(clicked_card: Card) -> None:
         print("Card is not clickable")
         return
 
-    if last_card == None and clicked_card.is_clickable(): # First time clicking a card
-        if clicked_card.location == "foundation":
-            print("Cannot move from foundation")
-            return
-
+    if last_card == None: # First time clicking a card
         print("First time clicking a card")
-        # select function
         clicked_card.select()
-        # aux: Card | None = clicked_card
-        # 
-        # while aux != None: # make it add to an array so I can check if the card below is in array to do nothing
-        #     print("Colorized")
-        #     aux.button.configure(highlightthickness=4, highlightbackground="#37d3ff")
-        #     aux = aux.next
 
         last_card = clicked_card
-    elif last_card == clicked_card: # click 2 times on the same card
-        # DESELECT METHOD
+        return
+
+    if last_card == clicked_card: # click 2 times on the same card
         last_card.deselect()
 
-        # aux = clicked_card
-
-        # while aux != None:
-        #     aux.button.configure(highlightthickness=0)
-        #     aux = aux.next
-
         last_card = None
-    elif clicked_card.location == "free": # last_selected_card and 
-        print("This free cell is been used")
-    elif last_card.rank == clicked_card.rank - 1 or last_card.rank == clicked_card.rank + 1:
-        if clicked_card.location == "board" and last_card.color == clicked_card.color:
-            print("Not a valid card")
-            return
+        return
 
-        if clicked_card.location == "foundation":
-            if last_card.suit != clicked_card.suit or last_card.rank < clicked_card.rank:
-                print("Not a valid card")
-                return
+    # CAN MOVE TO
+    if last_card.can_move_to(clicked_card):
+        print("Yes it can")
+        last_card.move_to(clicked_card)
+        # last_card.previous = clicked_card
+        # last_card.next = None
 
+    # ---------- Checks if if its a free cell card
+    # if clicked_card.location == "free":
+    #     print("This free cell is been used")
+    #     return
 
-        y_space = 0 if clicked_card.location == "foundation" else 40
+    # ---------- Checks if its not a valid card to move on the board
+    # if clicked_card.location == "board" and (last_card.rank + 1 != clicked_card.rank or last_card.color == clicked_card.color):
+    #     print("Not a valid card for board")
+    #     return
 
-        aux = last_card
-        
-        if aux.previous != None:
-            aux.previous.next = None
-            aux.previous = None
+    # ---------- Checks foundation move condition
+    # if clicked_card.location == "foundation" and (last_card.rank - 1 != clicked_card.rank or last_card.suit != clicked_card.suit):
+    #     # if last_card.suit != clicked_card.suit or last_card.rank < clicked_card.rank:
+    #     print("Not a valid card for foundation")
+    #     return
 
-        # MOVE TO
-        while aux != None:
-            aux.button.place(x=clicked_card.button.winfo_x(), y=clicked_card.button.winfo_y() + y_space)
-            aux.button.lift()
-            y_space += 40
-            aux = aux.next
+    # ---------- Move card or pile
+    # y_space = 0 if clicked_card.location == "foundation" else 40
 
-        # if last_card.previous != None:
-        #     last_card.previous.next = None
+    # aux = last_card
+    
+    # if aux.previous != None:
+    #     aux.previous.next = None
 
-        clicked_card.next = last_card
-        last_card.location = clicked_card.location
+    # MOVE TO
+    # if last_card.next == None:
+    #     last_card.move_to(clicked_card)
+    # else:
+    #     ...
+        # MOVE PILE OR SOMETHING
+    # while aux != None:
+    #     aux.button.place(x=clicked_card.button.winfo_x(), y=clicked_card.button.winfo_y() + y_space)
+    #     aux.button.lift()
+    #     y_space += 40
+    #     aux = aux.next
 
-        if clicked_card.location == "foundation":
-            cards_left -= 1
-            print(cards_left)
+    # if last_card.previous != None:
+    #     last_card.previous.next = None
 
-            if cards_left == 0:
-                print("YOU WIN")
+    # clicked_card.next = last_card
+    # last_card.location = clicked_card.location
 
-                win_label = Label(root, width=20, height=4, text=f"You win!\n\nScore: {100000 // moves}pts")
-                win_label.place(relx=.5, rely=.5, anchor="center")
-                
-        
-        last_card.previous = clicked_card
-        
-        # last_card.button.lift()
+    if clicked_card.location == "foundation":
+        cards_left -= 1
+        print(cards_left)
 
-        # Unhilight card
-        last_card.deselect()
-        # aux = last_card
+        if cards_left == 0:
+            print("YOU WIN")
 
-        # while aux != None:
-        #     aux.button.configure(highlightthickness=0)
-        #     aux = aux.next
+            win_label = Label(root, width=20, height=4, text=f"You win!\n\nScore: {100000 // moves}pts")
+            win_label.place(relx=.5, rely=.5, anchor="center")
+            
+    
+    # last_card.previous = clicked_card
+    
+    # last_card.button.lift()
 
-        # last_card.button.configure(highlightthickness=0)
-        last_card = None
-        moves += 1
+    # Unhilight card
+    last_card.deselect()
+    # aux = last_card
+
+    # while aux != None:
+    #     aux.button.configure(highlightthickness=0)
+    #     aux = aux.next
+
+    # last_card.button.configure(highlightthickness=0)
+    last_card = None
+    moves += 1
 
 def click_frame(frame) -> None:
     global last_card
@@ -256,6 +339,11 @@ def click_frame(frame) -> None:
 deck_of_cards = []
 # distribute them randomly in 8 stacks
 card_stacks = [[] for n in range(8)]
+
+# MERGE THIS WITH THE NEXT AND USE SHUFFLE
+# for rank in range(1, 14):
+#         for suit in suits:
+#             deck_of_cards.append(f"{rank}_of_{suit}")
 
 for n in range(7):
         for stack in card_stacks:
