@@ -120,8 +120,6 @@ class Card:
             aux: Card | None = self
 
             while aux.next != None:
-                print("Checking cards below 1")
-
                 # if card below is not 1 rank lower or the colors are different
                 if aux.rank - 1 != aux.next.rank or aux.color == aux.next.color:
                     return False
@@ -164,16 +162,10 @@ class Card:
 
             return False
         elif isinstance(destination, Cell):
-            # if destination.type != "board" and not self.is_top():
-            #     print("Condition 1")
-            #     return False
             if destination.type == "free" and self.is_top():
-                print("Condition 1")
                 return True
 
             if destination.type == "foundation" and self.rank == 1:
-                print("Condition 2")
-                # if self.rank == 1:
                 return True
 
             if destination.type == "board": # Check after to refactor
@@ -189,7 +181,6 @@ class Card:
             y_space: int = 40 if destination.location == "board" else 0
 
             if destination.location == "board":
-                print("move pile")
                 self.__move_pile_to(destination)
             else:
                 self.button.place(x=destination.button.winfo_x(), y=destination.button.winfo_y() + y_space)
@@ -264,12 +255,11 @@ class Card:
 
             last_card = None
         elif last_card.can_move_to(self):
-            print("Yes it can")
-            last_card.move_to(self)
+            last_card.move_to(self) 
 
             if self.location == "foundation":
                 cards_left -= 1
-                print(cards_left)
+                print("Cards left", cards_left) 
 
                 # turn into a function 
                 if cards_left == 0:
@@ -389,6 +379,10 @@ def restart() -> None:
 
 restart_button = Button(root, text="new game", command=restart)
 restart_button.place(x=0, y=0)
+
+logo = PhotoImage(file="imgs/logo-freecell-dcc-mini.png")
+logo_label = Label(root, image=logo, background="green")
+logo_label.pack()
 
 # Main
 if __name__ == "__main__":
