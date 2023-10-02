@@ -4,12 +4,6 @@ from PIL import ImageTk, Image # pip install pillow
 from typing import Optional
 import random
 
-"""
-TO-DO:
-USE RANDOM.SHUFFLE TO SHUFFLE THE DECK WITH NO NEED IN CREATING ANOTHER
-SEPARATE IN MODULES
-"""
-
 root: Tk = Tk()
 root.title("Free Cell")
 root.geometry("1100x700")
@@ -93,7 +87,7 @@ class Card:
         self.color: str = "red" if self.suit == "hearts" or self.suit == "diamonds" else "black"
 
         self.location: str = "board"
-        self.previous: Card | None = previous # can be replaced with interactions with the current stack (another object or just the array?)
+        self.previous: Card | None = previous 
         self.next: Card | None = next
 
         self.img = ImageTk.PhotoImage(Image.open(f"cards/{self.name}.png"))
@@ -132,7 +126,7 @@ class Card:
         """Highlights card/pile."""
         aux: Card | None = self
         
-        while aux != None: # make it add to an array so I can check if the card below is in array to do nothing
+        while aux != None: 
             aux.button.configure(highlightthickness=4, highlightbackground="#37d3ff")
             aux = aux.next
 
@@ -261,7 +255,6 @@ class Card:
                 cards_left -= 1
                 print("Cards left", cards_left) 
 
-                # turn into a function 
                 if cards_left == 0:
                     print("YOU WIN")
 
@@ -274,13 +267,9 @@ class Card:
 
 
 deck_of_cards = []
+
 # distribute them randomly in 8 stacks
 card_stacks = [[] for n in range(8)]
-
-# MERGE THIS WITH THE NEXT AND USE SHUFFLE
-# for rank in range(1, 14):
-#         for suit in suits:
-#             deck_of_cards.append(f"{rank}_of_{suit}")
 
 for n in range(7):
         for stack in card_stacks:
@@ -324,7 +313,7 @@ def start():
 
                 stack.append(picked_card)
 
-    # show the cards on the screen (turn into a function)
+    # show the cards on the screen
     x_pos = 30
 
     for i, stack in enumerate(card_stacks):
@@ -359,7 +348,7 @@ def restart() -> None:
 
     for i, stack in enumerate(card_stacks):
         cards_num = len(stack)
-        base_frames[i].frame.destroy() # may cause something
+        base_frames[i].frame.destroy()
 
         for i in range(cards_num):
             removed_card = stack.pop()
