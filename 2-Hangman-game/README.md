@@ -2,5 +2,6 @@
 
 ```
 make clean
-make && /bin/hangman
+make
+./bin/hangman
 ```
