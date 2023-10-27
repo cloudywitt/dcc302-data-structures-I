@@ -1,6 +1,6 @@
-from __future__ import annotations # Python 3.7>
+from __future__ import annotations
 from tkinter import *
-from PIL import ImageTk, Image # pip install pillow
+from PIL import ImageTk, Image
 from typing import Optional
 import random
 
