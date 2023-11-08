@@ -1,15 +1,14 @@
 from __future__ import annotations
-from tkinter import *
+import tkinter as tk
 from PIL import ImageTk, Image
-from typing import Optional
 import random
 
-root: Tk = Tk()
+root: tk.Tk = tk.Tk()
 root.title("Free Cell")
 root.geometry("1100x700")
 root.config(bg="green")
 
-win_label = Label(root, width=20, height=4)
+win_label = tk.Label(root, width=20, height=4)
 
 cards_left: int = 52
 last_card: Card | None = None
@@ -20,7 +19,7 @@ class Timer:
         self.seconds: int = 0
         self.minutes: int = 0
 
-        self.label = Label(root, text=f"{self.minutes:02}:{self.seconds:02}")
+        self.label = tk.Label(root, text=f"{self.minutes:02}:{self.seconds:02}")
         self.label.pack()
 
     def update_timer(self) -> None:
@@ -48,7 +47,7 @@ class Cell:
         self.type: str = type
         self.hgbd: str = "lightgrey" if self.type == "foundation" else "lightgreen"
 
-        self.frame: Frame = Frame(
+        self.frame: tk.Frame = tk.Frame(
                     root,
                     highlightbackground=self.hgbd,
                     highlightthickness=2,
@@ -63,7 +62,7 @@ class Cell:
         """Handles cards interactions with cells."""
         global last_card, cards_left
 
-        if last_card == None:
+        if last_card is None:
             return
 
         if not last_card.can_move_to(self):
@@ -80,20 +79,20 @@ class Cell:
 
 
 class Card:
-    def __init__(self, rt: Tk, name: str, previous: Card | None = None, next: Card | None = None) -> None:
+    def __init__(self, rt: tk.TK, name: str, previous: Card | None = None, next: Card | None = None) -> None:
         self.name: str = name
         self.rank: int = int(self.name.split("_")[0])
         self.suit: str = self.name.split("_")[2]
         self.color: str = "red" if self.suit == "hearts" or self.suit == "diamonds" else "black"
 
         self.location: str = "board"
-        self.previous: Card | None = previous 
+        self.previous: Card | None = previous
         self.next: Card | None = next
 
         self.img = ImageTk.PhotoImage(Image.open(f"cards/{self.name}.png"))
-        self.button: Button = Button(rt)
+        self.button: tk.Button = tk.Button(rt)
         self.button.config(image=self.img, relief="sunken")
-        self.button.bind("<Button-1>", self.click) # self.button.bind("<Button-1>", lambda event: click_card(self))
+        self.button.bind("<Button-1>", self.click)  # self.button.bind("<Button-1>", lambda event: click_card(self))
 
     def __repr__(self) -> str:
         return f"""Name: {self.name}
@@ -103,17 +102,17 @@ class Card:
     Location: {self.location}"""
 
     def is_top(self) -> bool:
-        return self.next == None
+        return self.next is None
 
     def is_clickable(self) -> bool:
         """Checks if card/pile can be clicked (highlighted)"""
-        if last_card == None and self.location == "foundation":
+        if last_card is None and self.location == "foundation":
             return False
 
         if not self.is_top() and self.location == "board":
             aux: Card | None = self
 
-            while aux.next != None:
+            while aux.next is not None:
                 # if card below is not 1 rank lower or the colors are different
                 if aux.rank - 1 != aux.next.rank or aux.color == aux.next.color:
                     return False
@@ -125,8 +124,8 @@ class Card:
     def select(self) -> None:
         """Highlights card/pile."""
         aux: Card | None = self
-        
-        while aux != None: 
+
+        while aux is not None:
             aux.button.configure(highlightthickness=4, highlightbackground="#37d3ff")
             aux = aux.next
 
@@ -134,7 +133,7 @@ class Card:
         """Disable card's/pile's highlights."""
         aux: Card | None = self
 
-        while aux != None:
+        while aux is not None:
             aux.button.configure(highlightthickness=0)
             aux = aux.next
 
@@ -148,7 +147,7 @@ class Card:
                 self.rank + 1 == destination.rank and
                 self.color != destination.color):
                 return True
-            
+
             if (destination.location == "foundation" and
                 self.rank - 1 == destination.rank and
                 self.suit == destination.suit):
@@ -162,11 +161,10 @@ class Card:
             if destination.type == "foundation" and self.rank == 1:
                 return True
 
-            if destination.type == "board": # Check after to refactor
+            if destination.type == "board":  # Check after to refactor
                 return True
-                
+
             return False
-            
 
     def move_to(self, destination: Card | Cell) -> None:
         """Moves card/cards to destination and updates its status."""
@@ -179,7 +177,7 @@ class Card:
             else:
                 self.button.place(x=destination.button.winfo_x(), y=destination.button.winfo_y() + y_space)
                 self.button.lift()
-                
+
             # Change position references
             if self.previous:
                 self.previous.next = None
@@ -197,7 +195,7 @@ class Card:
 
                 self.button.place(x=destination.frame.winfo_x(), y=destination.frame.winfo_y() + y_space)
                 self.button.lift()
-                
+
             # Change position references
             if self.previous:
                 self.previous.next = None
@@ -212,7 +210,7 @@ class Card:
         y_space: int = 40
 
         aux: Card | None = self
-        
+
         if isinstance(destination, Card):
             destination_x = destination.button.winfo_x()
             destination_y = destination.button.winfo_y()
@@ -221,7 +219,7 @@ class Card:
             destination_x = destination.frame.winfo_x()
             destination_y = destination.frame.winfo_y()
 
-        while aux != None:
+        while aux is not None:
             aux.button.place(x=destination_x, y=destination_y + y_space)
             aux.button.lift()
 
@@ -239,21 +237,21 @@ class Card:
 
         if not self.is_clickable():
             print("Card is not clickable")
-        elif last_card == None: # first time clicking a card
+        elif last_card is None:  # first time clicking a card
             print("First time clicking a card")
             self.select()
 
             last_card = self
-        elif last_card == self: # click 2 times on the same card
+        elif last_card == self:  # click 2 times on the same card
             last_card.deselect()
 
             last_card = None
         elif last_card.can_move_to(self):
-            last_card.move_to(self) 
+            last_card.move_to(self)
 
             if self.location == "foundation":
                 cards_left -= 1
-                print("Cards left", cards_left) 
+                print("Cards left", cards_left)
 
                 if cards_left == 0:
                     print("YOU WIN")
@@ -261,7 +259,7 @@ class Card:
                     points = 10000 - timer.get_time_in_seconds()
                     win_label["text"] = f"You win!\n\nScore: {points}pts"
                     win_label.place(relx=.5, rely=.5, anchor="center")
-        
+
             last_card.deselect()
             last_card = None
 
@@ -272,21 +270,22 @@ deck_of_cards = []
 card_stacks = [[] for n in range(8)]
 
 for n in range(7):
-        for stack in card_stacks:
-            if len(deck_of_cards) > 0:
-                picked_card = random.choice(deck_of_cards)
-                deck_of_cards.remove(picked_card)
-                picked_card = Card(root, picked_card, previous=stack[-1] if len(stack) > 0 else None)
+    for stack in card_stacks:
+        if len(deck_of_cards) > 0:
+            picked_card = random.choice(deck_of_cards)
+            deck_of_cards.remove(picked_card)
+            picked_card = Card(root, picked_card, previous=stack[-1] if len(stack) > 0 else None)
 
-                if len(stack) > 0:
-                    stack[-1].next = picked_card
+            if len(stack) > 0:
+                stack[-1].next = picked_card
 
-                stack.append(picked_card)
+            stack.append(picked_card)
 
 # Above cells creation
 free_cell = []
 foundations = []
 base_frames = []
+
 
 def start():
     global deck_of_cards, card_stacks, free_cell, foundations, base_frames
@@ -335,7 +334,6 @@ def start():
         camp.frame.place(x=x_pos, y=y_pos)
         x_pos += 110
 
-
     x_pos = 650
 
     for camp in foundations:
@@ -366,11 +364,11 @@ def restart() -> None:
     start()
 
 
-restart_button = Button(root, text="new game", command=restart)
+restart_button = tk.Button(root, text="new game", command=restart)
 restart_button.place(x=0, y=0)
 
-logo = PhotoImage(file="imgs/logo-freecell-dcc-mini.png")
-logo_label = Label(root, image=logo, background="green")
+logo = tk.PhotoImage(file="imgs/logo-freecell-dcc-mini.png")
+logo_label = tk.Label(root, image=logo, background="green")
 logo_label.pack()
 
 # Main
